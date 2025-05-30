@@ -35,30 +35,47 @@ transliteration_map = {
     'ts': ['ց', 'ծ'], 'ye': ['ե'], 'gh': ['ղ'], 'vo': ['ո']
 }
 
+# Обратная транслитерация с армянского на английский для ссылки
+reverse_map = {
+    'ա': 'a', 'բ': 'b', 'գ': 'g', 'դ': 'd', 'ե': 'e', 'է': 'e', 'զ': 'z',
+    'տ': 't', 'թ': 't', 'ի': 'i', 'լ': 'l', 'խ': 'kh', 'կ': 'k', 'ք': 'k',
+    'հ': 'h', 'ձ': 'dz', 'ժ': 'zh', 'ջ': 'j', 'շ': 'sh', 'չ': 'ch', 'ճ': 'ch',
+    'ղ': 'gh', 'ց': 'ts', 'ծ': 'ts', 'մ': 'm', 'յ': 'y', 'ն': 'n',
+    'օ': 'o', 'ո': 'vo', 'պ': 'p', 'փ': 'p', 'ր': 'r', 'ռ': 'r',
+    'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev', 'ն': 'n'
+}
+
 def transliterate_to_armenian(text):
     text = text.lower()
     result = ''
-
     i = 0
     while i < len(text):
-        # Сначала двухбуквенные сочетания
         two_letter = text[i:i+2]
         if two_letter in transliteration_map:
             result += transliteration_map[two_letter][0]
             i += 2
             continue
-
-        # Потом однобуквенные
         one_letter = text[i]
         if one_letter in transliteration_map:
             result += transliteration_map[one_letter][0]
         else:
             result += one_letter
         i += 1
-
     return result
 
-# Поиск товара
+def transliterate_to_english(text):
+    result = ''
+    i = 0
+    while i < len(text):
+        # Handle 'ու' as one unit
+        if text[i:i+2] == 'ու':
+            result += 'u'
+            i += 2
+            continue
+        result += reverse_map.get(text[i], text[i])
+        i += 1
+    return result
+
 def search_product(product_name):
     response = wcapi.get("products", params={"search": product_name})
     if response.status_code != 200:
@@ -70,7 +87,7 @@ def search_product(product_name):
         return f"Տվյալ ապրանքը `{product_name}` չի գտնվել 😕", []
 
     items = []
-    for product in data[:3]:  # максимум 3 товара
+    for product in data[:3]:
         items.append({
             "name": product["name"],
             "price": product.get("price", "չի նշված"),
@@ -79,12 +96,10 @@ def search_product(product_name):
 
     return None, items
 
-# Извлекаем название товара
 def extract_product_name(user_input):
     prompt = f"""
-Ты — ИИ, который помогает извлекать название товара из пользовательского сообщения.
-
-Сообщение: "{user_input}"
+Դու արհեստական բանականություն ես, որը օգնում է դուրս բերել ապրանքի անունը հաճախորդի նամակից
+Նամակը: "{user_input}"
 
 Ответь только названием товара, которое нужно найти на сайте. 
 Не добавляй ничего лишнего, только название.
@@ -98,9 +113,8 @@ def extract_product_name(user_input):
     extracted_name = response.choices[0].message.content.strip()
     armenian_name = transliterate_to_armenian(extracted_name)
     print(f"[GPT Extracted] '{extracted_name}' → [Armenian] '{armenian_name}'")
-    return armenian_name
+    return extracted_name, armenian_name
 
-# Составляем ответ
 def generate_gpt_response(user_question, products):
     product_info = "\n".join([
         f"{p['name']} — {p['price']} դրամ — {p['link']}"
@@ -124,24 +138,24 @@ def generate_gpt_response(user_question, products):
 
     return response.choices[0].message.content
 
-# Обработка сообщений
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     user_query = message.text.strip()
 
-    # Извлекаем и транслитерируем
-    product_name = extract_product_name(user_query)
+    extracted_name, armenian_name = extract_product_name(user_query)
+    error, results = search_product(armenian_name)
 
-    # Поиск товара
-    error, results = search_product(product_name)
     if error:
         bot.send_message(message.chat.id, error)
         return
 
-    # GPT: формируем ответ
     gpt_reply = generate_gpt_response(user_query, results)
     bot.send_message(message.chat.id, gpt_reply, parse_mode='Markdown')
 
-# Запуск
-print("Бот с GPT и транслитерацией запущен")
+    # Транслитерируем в английский для ссылки
+    search_word = transliterate_to_english(armenian_name)
+    link_message = f"Այլ արդյունքների համար անցեք հետևյալ հղումով https://mrmarket.am/?s={search_word}&post_type=product"
+    bot.send_message(message.chat.id, link_message)
+
+print("Бот с GPT, транслитерацией и ссылкой запущен")
 bot.polling()
