@@ -153,8 +153,8 @@ def handle_message(message):
     bot.send_message(message.chat.id, gpt_reply, parse_mode='Markdown')
 
     # Транслитерируем в английский для ссылки
-    search_word = transliterate_to_english(armenian_name)
-    link_message = f"Այլ արդյունքների համար անցեք հետևյալ հղումով https://mrmarket.am/?s={search_word}&post_type=product"
+    
+    link_message = f"Այլ արդյունքների համար անցեք հետևյալ հղումով https://mrmarket.am/?s={armenian_name}&post_type=product"
     bot.send_message(message.chat.id, link_message)
 
 print("Бот с GPT, транслитерацией и ссылкой запущен")
