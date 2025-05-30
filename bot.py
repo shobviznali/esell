@@ -45,12 +45,13 @@ reverse_map = {
     'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev', 'ն': 'n'
 }
 
+
 def transliterate_to_armenian(text):
     text = text.lower()
     result = ''
     i = 0
     while i < len(text):
-        two_letter = text[i:i+2]
+        two_letter = text[i:i + 2]
         if two_letter in transliteration_map:
             result += transliteration_map[two_letter][0]
             i += 2
@@ -63,18 +64,20 @@ def transliterate_to_armenian(text):
         i += 1
     return result
 
+
 def transliterate_to_english(text):
     result = ''
     i = 0
     while i < len(text):
         # Handle 'ու' as one unit
-        if text[i:i+2] == 'ու':
+        if text[i:i + 2] == 'ու':
             result += 'u'
             i += 2
             continue
         result += reverse_map.get(text[i], text[i])
         i += 1
     return result
+
 
 def search_product(product_name):
     response = wcapi.get("products", params={"search": product_name})
@@ -96,6 +99,7 @@ def search_product(product_name):
 
     return None, items
 
+
 def extract_product_name(user_input):
     prompt = f"""
 Դու արհեստական բանականություն ես, որը օգնում է դուրս բերել ապրանքի անունը հաճախորդի նամակից
@@ -114,6 +118,7 @@ def extract_product_name(user_input):
     armenian_name = transliterate_to_armenian(extracted_name)
     print(f"[GPT Extracted] '{extracted_name}' → [Armenian] '{armenian_name}'")
     return extracted_name, armenian_name
+
 
 def generate_gpt_response(user_question, products):
     product_info = "\n".join([
@@ -138,6 +143,12 @@ def generate_gpt_response(user_question, products):
 
     return response.choices[0].message.content
 
+start_message = "Ողջույն։ Ես MR Market-ի օնլայն խորհրդատուն եմ։ Ես կօգնեմ Ձեզ արագ գտնել ցանկալի ապրանքը։"
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, start_message)
+
+
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     user_query = message.text.strip()
@@ -153,9 +164,10 @@ def handle_message(message):
     bot.send_message(message.chat.id, gpt_reply, parse_mode='Markdown')
 
     # Транслитерируем в английский для ссылки
-    
+
     link_message = f"Այլ արդյունքների համար անցեք հետևյալ հղումով https://mrmarket.am/?s={armenian_name}&post_type=product"
     bot.send_message(message.chat.id, link_message)
+
 
 print("Бот с GPT, транслитерацией и ссылкой запущен")
 bot.polling()
