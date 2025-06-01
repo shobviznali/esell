@@ -45,6 +45,7 @@ reverse_map = {
     'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev', 'ն': 'n'
 }
 
+random_var = 2
 
 def transliterate_to_armenian(text):
     text = text.lower()
