@@ -3,3 +3,4 @@ python-dotenv
 woocommerce
 openai
 requests
+langdetect
