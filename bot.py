@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from woocommerce import API
 import openai
+from langdetect import detect
 
 # Загружаем .env
 load_dotenv()
@@ -47,6 +48,11 @@ reverse_map = {
     'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev'
 }
 
+def detect_language(text):
+    try:
+        return detect(text)
+    except:
+        return 'unknown'
 
 def transliterate_to_armenian(text):
     text = text.lower()
@@ -78,26 +84,46 @@ def transliterate_to_english(text):
     return result
 
 
-def search_product(product_name):
-    try:
-        response = wcapi.get("products", params={"search": product_name})
-        response.raise_for_status()
-    except Exception as e:
-        print(f"[WooCommerce Error] {e}")
-        return "Սխալ տեղի ունեցավ ապրանքները որոնելիս 😕", []
+def search_product_multi(name_original, name_armenian):
+    """Выполняет поиск по всем подходящим языкам."""
+    search_terms = set()
 
-    data = response.json()
-    if not data:
-        return f"Տվյալ ապրանքը `{product_name}` չի գտնվել 😕", []
+    lang = detect_language(name_original)
 
-    items = []
-    for product in data[:3]:
-        items.append({
-            "name": product["name"],
-            "price": product.get("price", "չի նշված"),
-            "link": product.get("permalink", "")
-        })
-    return None, items
+    if lang == 'en':
+        search_terms.add(name_original)
+        search_terms.add(name_armenian)
+    elif lang == 'ru':
+        search_terms.add(name_original)
+    else:
+        search_terms.add(name_armenian)
+
+    all_results = []
+    seen_names = set()
+
+    for term in search_terms:
+        try:
+            response = wcapi.get("products", params={"search": term})
+            response.raise_for_status()
+        except Exception as e:
+            print(f"[WooCommerce Error] {e}")
+            continue
+
+        data = response.json()
+        for product in data:
+            product_name = product["name"]
+            if product_name not in seen_names:
+                seen_names.add(product_name)
+                all_results.append({
+                    "name": product_name,
+                    "price": product.get("price", "չի նշված"),
+                    "link": product.get("permalink", "")
+                })
+
+    if not all_results:
+        return f"Տվյալ ապրանքը `{name_original}` չի գտնվել 😕", []
+
+    return None, all_results[:3]  # ограничим до 3 результатов
 
 
 def extract_product_name(user_input):
@@ -162,7 +188,7 @@ def start(message):
 def handle_message(message):
     user_query = message.text.strip()
     extracted_name, armenian_name = extract_product_name(user_query)
-    error, results = search_product(armenian_name)
+    error, results = search_product_multi(extracted_name, armenian_name)
 
     if error:
         bot.send_message(message.chat.id, error)
