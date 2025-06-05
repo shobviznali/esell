@@ -49,16 +49,21 @@ reverse_map = {
 }
 
 
-def transliterate_to_english(text):
+def transliterate_to_armenian(text):
+    text = text.lower()
     result = ''
     i = 0
     while i < len(text):
-        two_letter = text[i:i+2]
-        if two_letter in reverse_map:
-            result += reverse_map[two_letter]
+        two_letter = text[i:i + 2]
+        if two_letter in transliteration_map:
+            result += transliteration_map[two_letter][0]
             i += 2
             continue
-        result += reverse_map.get(text[i], text[i])
+        one_letter = text[i]
+        if one_letter in transliteration_map:
+            result += transliteration_map[one_letter][0]
+        else:
+            result += one_letter
         i += 1
     return result
 
