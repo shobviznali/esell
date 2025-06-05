@@ -177,7 +177,7 @@ def handle_message(message):
     gpt_reply = generate_gpt_response(user_query, results)
     bot.send_message(message.chat.id, gpt_reply, parse_mode='Markdown')
 
-    search_link = f"https://mrmarket.am/?s={armenian_name}&post_type=product"
+    search_link = f"https://mrmarket.am/?s={extracted_name}&post_type=product"
     bot.send_message(message.chat.id, f"Այլ արդյունքների համար անցեք հետևյալ հղումով {search_link}")
 
 print("Բոտը պատրաստ է 🚀")
