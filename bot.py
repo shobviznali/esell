@@ -32,8 +32,10 @@ transliteration_map = {
     'c': ['ց', 'ք', 'ծ'], 'm': ['մ'], 'y': ['յ'], 'n': ['ն'],
     'o': ['օ', 'ո'], 'p': ['պ', 'փ'], 'r': ['ր', 'ռ'], 's': ['ս'],
     'v': ['վ'], 'u': ['ու'], 'f': ['ֆ'], 'q': ['ք'], 'ev': ['և'],
-    'ts': ['ց', 'ծ'], 'ye': ['ե'], 'gh': ['ղ'], 'vo': ['ո']
+    'ts': ['ց', 'ծ'], 'ye': ['ե'], 'gh': ['ղ'], 'vo': ['ո'],
+    'nk': ['նք']  # Добавлено!
 }
+
 
 # Обратная транслитерация с армянского на английский
 reverse_map = {
@@ -42,26 +44,24 @@ reverse_map = {
     'հ': 'h', 'ձ': 'dz', 'ժ': 'zh', 'ջ': 'j', 'շ': 'sh', 'չ': 'ch', 'ճ': 'ch',
     'ղ': 'gh', 'ց': 'ts', 'ծ': 'ts', 'մ': 'm', 'յ': 'y', 'ն': 'n',
     'օ': 'o', 'ո': 'vo', 'պ': 'p', 'փ': 'p', 'ր': 'r', 'ռ': 'r',
-    'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev', 'ն': 'n'
+    'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev',
+    'նք': 'nk'  # Добавлено!
 }
 
-def transliterate_to_armenian(text):
-    text = text.lower()
+
+def transliterate_to_english(text):
     result = ''
     i = 0
     while i < len(text):
-        two_letter = text[i:i + 2]
-        if two_letter in transliteration_map:
-            result += transliteration_map[two_letter][0]
+        two_letter = text[i:i+2]
+        if two_letter in reverse_map:
+            result += reverse_map[two_letter]
             i += 2
             continue
-        one_letter = text[i]
-        if one_letter in transliteration_map:
-            result += transliteration_map[one_letter][0]
-        else:
-            result += one_letter
+        result += reverse_map.get(text[i], text[i])
         i += 1
     return result
+
 
 def transliterate_to_english(text):
     result = ''
