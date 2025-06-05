@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from woocommerce import API
 from openai import OpenAI
+import itertools
 
 # Загружаем .env
 load_dotenv()
@@ -46,6 +47,28 @@ reverse_map = {
     'ս': 's', 'վ': 'v', 'ու': 'u', 'ֆ': 'f', 'և': 'ev'
 }
 
+def generate_transliterations(text):
+    text = text.lower()
+    variants = [[]]
+
+    i = 0
+    while i < len(text):
+        matched = False
+        for l in (3, 2, 1):  # Пробуем 3-, 2- и 1-буквенные комбинации
+            part = text[i:i + l]
+            if part in transliteration_map:
+                replacements = transliteration_map[part]
+                variants[-1].append(replacements)
+                i += l
+                matched = True
+                break
+        if not matched:
+            variants[-1].append([text[i]])  # Неизвестный символ — оставить как есть
+            i += 1
+
+    combinations = itertools.product(*variants[-1])
+    return [''.join(c) for c in combinations]
+
 
 def transliterate_to_armenian(text):
     text = text.lower()
@@ -78,15 +101,16 @@ def transliterate_to_english(text):
         i += 1
     return result
 
-def search_product_multi(name_original, name_armenian):
-    """Ищет товар по оригиналу, армянской транслитерации и английской обратной транслитерации."""
+def search_product_multi(name_original, _):
     search_terms = set()
     search_terms.add(name_original)
-    search_terms.add(name_armenian)
 
     if any(char in reverse_map for char in name_original):
         name_english = transliterate_to_english(name_original)
         search_terms.add(name_english)
+
+    armenian_variants = generate_transliterations(name_original)
+    search_terms.update(armenian_variants)
 
     all_results = []
     seen_names = set()
@@ -100,20 +124,24 @@ def search_product_multi(name_original, name_armenian):
             continue
 
         data = response.json()
-        for product in data:
-            product_name = product["name"]
-            if product_name not in seen_names:
-                seen_names.add(product_name)
-                all_results.append({
-                    "name": product_name,
-                    "price": product.get("price", "չի նշված"),
-                    "link": product.get("permalink", "")
-                })
+        if data:
+            for product in data:
+                product_name = product["name"]
+                if product_name not in seen_names:
+                    seen_names.add(product_name)
+                    all_results.append({
+                        "name": product_name,
+                        "price": product.get("price", "չի նշված"),
+                        "link": product.get("permalink", "")
+                    })
+            # Нашли результаты — прерываем дальше искать
+            break
 
     if not all_results:
         return f"Տվյալ ապրանքը `{name_original}` չի գտնվել 😕", []
 
     return None, all_results[:3]
+
 
 def extract_product_name(user_input):
     prompt = f"""
