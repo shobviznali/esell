@@ -171,7 +171,7 @@ def handle_message(message):
     error, results = search_product_multi(extracted_name, armenian_name)
 
     if error:
-        bot.send_message(message.chat.id, error)
+        bot.send_message(message.chat.id, 'Խնդրում ենք գրել ապրանքի անունը')
         return
 
     gpt_reply = generate_gpt_response(user_query, results)
