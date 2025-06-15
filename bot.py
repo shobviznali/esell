@@ -210,3 +210,4 @@ def handle_message(message):
 
 print("Բոտը պատրաստ է 🚀")
 bot.polling()
+
