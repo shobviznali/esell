@@ -207,7 +207,7 @@ def handle_message(message):
 
     search_link = f"https://mrmarket.am/?s={extracted_name}&post_type=product"
     bot.send_message(message.chat.id, f"Այլ արդյունքների համար անցեք հետևյալ հղումով {search_link}")
-
+temp_variable = 1
 print("Բոտը պատրաստ է 🚀")
 bot.polling()
 
